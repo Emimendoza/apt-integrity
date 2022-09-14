@@ -64,4 +64,5 @@ void apt_int::readSourceFile() {
 int apt_int::main()
 {
     readSourceFile();
+    return 0;
 }

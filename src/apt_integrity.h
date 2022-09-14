@@ -4,7 +4,8 @@
 #include <vector>
 #include <string>
 
-namespace apt_integrity{
+namespace apt_integrity
+{
 
     struct source
     {
@@ -14,7 +15,7 @@ namespace apt_integrity{
         std::vector<std::string> scopes;
     };
 
-    class apt_int {
+    class apt_int{
     public:
         int main();
     private:
