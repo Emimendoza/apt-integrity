@@ -18,9 +18,12 @@ namespace apt_integrity
     class apt_int{
     public:
         int main();
+        // Args
+        bool verbose = false;
+        int threads = -1;
     private:
         // Variables
-        int _threads;
+        unsigned int _threads;
         int _lockfd;
         std::vector<source> _sources;
         std::string _mirrorPath = "$base_path/mirror";
@@ -28,8 +31,9 @@ namespace apt_integrity
         std::string _varPath = "$base_path/var";
         // Helper Functions
         static std::vector<std::string> splitString(const std::string& str);
-        static std::string sha256(const std::string& path);
+        bool sha256(const std::string& path, const std::string& knownHash) const;
         // Main Functions
+        void setArgs();
         void readSourceFile();
         void fixPaths();
         void setLock();
