@@ -34,7 +34,11 @@ namespace apt_integrity
         std::string _varPath = "$base_path/var";
         // Helper Functions
         static std::vector<std::string> splitString(const std::string& str);
-        bool sha256(const std::string& path, const std::string& knownHash);
+        static void print(const std::string& text);
+        static void printe(const std::string& text);
+        static void println(const std::string& text);
+        static void printeln(const std::string& text);
+        [[nodiscard]] bool sha256(const std::string& path, const std::string& knownHash) const;
         // Main Functions
         void setArgs();
         void readSourceFile();

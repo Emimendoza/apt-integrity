@@ -22,19 +22,35 @@ std::vector<std::string> apt_int::splitString(const std::string& str)
     }
     return tokens;
 }
+void apt_int::print(const std::string& text)
+{
+    _coutLock.lock();
+    std::cout << text;
+    _coutLock.lock();
+}
+void apt_int::println(const std::string& text)
+{
+    print(text + "\n");
+}
+void apt_int::printe(const std::string& text)
+{
+    _cerrLock.lock();
+    std::cerr << text;
+    _cerrLock.unlock();
+}
+void apt_int::printeln(const std::string& text)
+{
+    printe(text+"\n");
+}
 
-bool apt_int::sha256(const std::string &path,const std::string& knownHash)
+bool apt_int::sha256(const std::string &path,const std::string& knownHash) const
 {
     // Open File
     std::ifstream file(path, std::ios::in | std::ios::binary);
     if (!file)
     {
         if(verbose)
-        {
-            _coutLock.lock();
-            std::cout << "Cannot open file:" +path+ "\n";
-            _coutLock.unlock();
-        }
+            println("Cannot open file:" +path);
         return true;
     }
     // Declare and initialize  helper variables
@@ -65,20 +81,11 @@ bool apt_int::sha256(const std::string &path,const std::string& knownHash)
     if(ss.str()==knownHash)
     {
         if (verbose)
-        {
-            _coutLock.lock();
-            std::cout << path << ": OK \n";
-            _coutLock.unlock();
-        }
-
+            println(path + ": OK");
         return false;
     }
     if(verbose)
-    {
-        _coutLock.lock();
-        std::cout << path << ": BAD Expected:" + knownHash + " ACTUAL:" + ss.str() + "\n";
-        _coutLock.unlock();
-    }
+        println(": BAD Expected:" + knownHash + " ACTUAL:" + ss.str());
     return true;
 }
 // Main Functions
@@ -166,7 +173,7 @@ void apt_int::setLock()
     _lockfd = open((_varPath+"/apt-mirror.lock").c_str(),O_CREAT|O_RDONLY,0666);
      if (flock(_lockfd, LOCK_EX | LOCK_NB) != 0)
      {
-         std::cerr << "Couldn't get lock on lock file, maybe apt-mirror is running?\n";
+         printeln("Couldn't get lock on lock file, maybe apt-mirror is running?");
          exit(1);
      }
 }
@@ -175,11 +182,11 @@ void apt_int::releaseLock()
 {
     if (flock(_lockfd, LOCK_UN)!=0 || close(_lockfd) != 0)
     {
-        std::cerr << "Error Unlocking file\n";
+        printeln("Error Unlocking file");
     }
     if(unlink((_varPath+"/apt-mirror.lock").c_str())!=0)
     {
-        std::cerr << "Error deleting lock file\n";
+        printeln( "Error deleting lock file");
     }
 }
 
