@@ -23,14 +23,18 @@ std::vector<std::string> apt_int::splitString(const std::string& str)
     return tokens;
 }
 
-bool apt_int::sha256(const std::string &path,const std::string& knownHash) const
+bool apt_int::sha256(const std::string &path,const std::string& knownHash)
 {
     // Open File
     std::ifstream file(path, std::ios::in | std::ios::binary);
     if (!file)
     {
         if(verbose)
+        {
+            _coutLock.lock();
             std::cout << "Cannot open file:" +path+ "\n";
+            _coutLock.unlock();
+        }
         return true;
     }
     // Declare and initialize  helper variables
@@ -61,11 +65,20 @@ bool apt_int::sha256(const std::string &path,const std::string& knownHash) const
     if(ss.str()==knownHash)
     {
         if (verbose)
+        {
+            _coutLock.lock();
             std::cout << path << ": OK \n";
+            _coutLock.unlock();
+        }
+
         return false;
     }
     if(verbose)
+    {
+        _coutLock.lock();
         std::cout << path << ": BAD Expected:" + knownHash + " ACTUAL:" + ss.str() + "\n";
+        _coutLock.unlock();
+    }
     return true;
 }
 // Main Functions

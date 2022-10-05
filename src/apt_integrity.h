@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <mutex>
 
 namespace apt_integrity
 {
@@ -22,6 +23,8 @@ namespace apt_integrity
         bool verbose = false;
         int threads = -1;
     private:
+        // Static Variables
+        static std::mutex _coutLock, _cerrLock;
         // Variables
         unsigned int _threads;
         int _lockfd;
@@ -31,7 +34,7 @@ namespace apt_integrity
         std::string _varPath = "$base_path/var";
         // Helper Functions
         static std::vector<std::string> splitString(const std::string& str);
-        bool sha256(const std::string& path, const std::string& knownHash) const;
+        bool sha256(const std::string& path, const std::string& knownHash);
         // Main Functions
         void setArgs();
         void readSourceFile();
