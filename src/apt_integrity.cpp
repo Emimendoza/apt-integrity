@@ -26,7 +26,7 @@ void apt_int::print(const std::string& text)
 {
     _coutLock.lock();
     std::cout << text;
-    _coutLock.lock();
+    _coutLock.unlock();
 }
 void apt_int::println(const std::string& text)
 {
@@ -43,7 +43,7 @@ void apt_int::printeln(const std::string& text)
     printe(text+"\n");
 }
 
-bool apt_int::sha256(const std::string &path,const std::string& knownHash) const
+bool apt_int::sha256(const std::string &path,const std::string& knownHash, const unsigned int &currThread)
 {
     // Open File
     std::ifstream file(path, std::ios::in | std::ios::binary);
@@ -53,30 +53,23 @@ bool apt_int::sha256(const std::string &path,const std::string& knownHash) const
             println("Cannot open file:" +path);
         return true;
     }
-    // Declare and initialize  helper variables
-    char fileBuffer[4096];
-    unsigned char *hash;
-    unsigned int size = EVP_MD_size(EVP_sha256());
-    EVP_MD_CTX *ctx;
-    ctx = EVP_MD_CTX_new();
-    EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr);
+    // Get CTX ready
+    EVP_MD_CTX_reset(threadCtx[currThread].ctx);
+    EVP_DigestInit_ex(threadCtx[currThread].ctx, EVP_sha256(), nullptr);
     // Get Hash
     while(file)
     {
-        file.read(fileBuffer, 4096);
-        EVP_DigestUpdate(ctx, fileBuffer, file.gcount());
+        file.read(threadCtx[currThread].fileBuffer, 4096);
+        EVP_DigestUpdate(threadCtx[currThread].ctx, threadCtx[currThread].fileBuffer, file.gcount());
     }
     // Finalize
-    hash = (unsigned char *)OPENSSL_malloc(size);
-    EVP_DigestFinal_ex(ctx,hash, &size);
-    EVP_MD_CTX_free(ctx);
+    EVP_DigestFinal_ex(threadCtx[currThread].ctx,threadCtx[currThread].hash, &size);
     file.close();
     // Get hex string
     std::stringstream ss;
     ss << std::setfill('0') << std::hex;
     for(int i=0; i<size; ++i)
-        ss << std::setw(2) << (unsigned short)hash[i];
-    free(hash);
+        ss << std::setw(2) << (unsigned short)threadCtx[currThread].hash[i];
     // Compare with expected hash
     if(ss.str()==knownHash)
     {
@@ -178,6 +171,26 @@ void apt_int::setLock()
      }
 }
 
+void apt_int::initThreads()
+{
+    threadCtx = (thread_ctx *) malloc(sizeof(thread_ctx)*_threads);
+    for(int i = 0 ; i< _threads; i++)
+    {
+        threadCtx[i].ctx = EVP_MD_CTX_new();
+        threadCtx[i].hash = (unsigned char *)OPENSSL_malloc(size);
+    }
+}
+
+void apt_int::freeThreads()
+{
+    for(int i = 0 ; i< _threads; i++)
+    {
+        EVP_MD_CTX_free(threadCtx[i].ctx);
+        free(threadCtx[i].hash);
+    }
+    free(threadCtx);
+}
+
 void apt_int::releaseLock()
 {
     if (flock(_lockfd, LOCK_UN)!=0 || close(_lockfd) != 0)
@@ -196,6 +209,8 @@ int apt_int::main()
     readSourceFile();
     fixPaths();
     setLock();
+    initThreads();
+    freeThreads();
     releaseLock();
     return 0;
 }
